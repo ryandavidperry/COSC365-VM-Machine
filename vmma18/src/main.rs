@@ -1,7 +1,23 @@
 use std::io::{self, Read, Write};
+use std::env::args;
+use std::fs;
 
 // Entry point of the program
 fn main() {
+    let args: Vec<String> = args().collect();
+    if args.len() != 2 {
+        println!("Usage: {} <file.v>", &args[0]);
+        return;
+    }
+    let filename = &args[1];
+
+    let binary = fs::read(filename).expect("No such file or directory");
+
+    // Convert the binary data into a vector of u32 instructions
+    let program: Vec<u32> = binary
+        .chunks(4)                                      
+        .map(|chunk| u32::from_le_bytes(chunk.try_into().unwrap()))  
+        .collect();
 
     // Create a new virtual machine instance
     let mut machine = Machine {
@@ -11,15 +27,6 @@ fn main() {
         input: io::stdin(),  
         output: io::stdout() 
     };
-
-    // Include a binary file at compile time (e.g. compiled bytecode)
-    let binary = include_bytes!("../marz/stinput.v");
-
-    // Convert the binary data into a vector of u32 instructions
-    let program: Vec<u32> = binary
-        .chunks(4)                                      
-        .map(|chunk| u32::from_le_bytes(chunk.try_into().unwrap()))  
-        .collect();
 
     // Load the program into the VM's memory
     machine.load(&program).unwrap();
