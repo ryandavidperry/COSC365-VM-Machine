@@ -194,10 +194,10 @@ impl<R: Read, W: Write> Machine<R, W> {
                 /*
                  * Binary Arithmetic Instructions
                  */
-                Instruction::Add()=> self.binary_op(|l, r| l.wrapping_add(r)),
-                Instruction::Subtract() => self.binary_op(|l, r| l.wrapping_sub(r)),
-                Instruction::Multiply() => self.binary_op(|l, r| l.wrapping_mul(r)),
-                Instruction::Divide() => self.binary_op(|l, r| l.wrapping_div(r)),
+                Instruction::Add()=> self.binary_op(|l, r| l + r),
+                Instruction::Subtract() => self.binary_op(|l, r| l - r),
+                Instruction::Multiply() => self.binary_op(|l, r| l * r),
+                Instruction::Divide() => self.binary_op(|l, r| l / r),
                 Instruction::Remainder() => self.binary_op(|l, r| l % r),
                 Instruction::And() => self.binary_op(|l, r| l & r),
                 Instruction::Or() => self.binary_op(|l, r| l | r),
@@ -205,7 +205,7 @@ impl<R: Read, W: Write> Machine<R, W> {
                 Instruction::LogicalLeftShift() => self.binary_op(|l, r| l << r),
                 Instruction::LogicalRightShift() => self.binary_op(|l, r| l >> r),
                 Instruction::ArithmeticRightShift() => {
-                    self.binary_op(|l, r| (l as i32 >> r) as u32)
+                    self.binary_op(|l, r| l as i32 >> r)
                 }
 
                 Instruction::Pop(offset) => {
@@ -248,10 +248,10 @@ impl<R: Read, W: Write> Machine<R, W> {
                     let val = self.ram[idx];
 
                     match offset & 0b11 {
-                        0b00 => writeln!(self.output, "{}", val)?,
-                        0b01 => writeln!(self.output, "{:#X}", val)?,
-                        0b10 => writeln!(self.output, "{:b}", val)?,
-                        0b11 => writeln!(self.output, "{:o}", val)?,
+                        0b00 => writeln!(self.output, "{}", val as i32)?,
+                        0b01 => writeln!(self.output, "{:#X}", val as i32)?,
+                        0b10 => writeln!(self.output, "{:b}", val as i32)?,
+                        0b11 => writeln!(self.output, "{:o}", val as i32)?,
                         _ => unreachable!(),
                     }
                     self.output.flush()?;
@@ -267,25 +267,25 @@ impl<R: Read, W: Write> Machine<R, W> {
     }
 
     /*
-     * Binary artimethc helper function
+     * Binary arithmetic helper function
      */
     fn binary_op<F>(&mut self, op: F)
     where
-        F: Fn(u32, u32) -> u32,
+        F: Fn(i32, i32) -> i32,
     {
         // Get right operand
-        let right = self.ram[self.sp as usize];
+        let right = self.ram[self.sp as usize] as i32;
         self.sp += 1;
 
         // Get left operand
-        let left = self.ram[self.sp as usize];
+        let left = self.ram[self.sp as usize] as i32;
         self.sp += 1;
 
         // Apply binary operation to operands
         let result = op(left, right);
 
         self.sp -= 1;
-        self.ram[self.sp as usize] = result;
+        self.ram[self.sp as usize] = result as u32;
     }
 
     // Increment program counter
