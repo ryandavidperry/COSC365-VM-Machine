@@ -130,6 +130,7 @@ impl<R: Read, W: Write> Machine<R, W> {
         Ok(())
     }
 
+
     // Run the virtual machine loop
     pub fn run(&mut self) -> Result<u8, Box<dyn std::error::Error>> {
         loop {
@@ -190,19 +191,21 @@ impl<R: Read, W: Write> Machine<R, W> {
                     }
                 }
 
-                Instruction::Add() => {
-                    // Pop right operand
-                    let right = self.ram[self.sp as usize];
-                    self.sp += 1;
-
-                    // Pop left operand
-                    let left = self.ram[self.sp as usize];
-                    self.sp += 1;
-
-                    // Push result
-                    let result = left + right;
-                    self.sp -= 1;
-                    self.ram[self.sp as usize] = result;
+                /*
+                 * Binary Arithmetic Instructions
+                 */
+                Instruction::Add()=> self.binary_op(|l, r| l.wrapping_add(r)),
+                Instruction::Subtract() => self.binary_op(|l, r| l.wrapping_sub(r)),
+                Instruction::Multiply() => self.binary_op(|l, r| l.wrapping_mul(r)),
+                Instruction::Divide() => self.binary_op(|l, r| l.wrapping_div(r)),
+                Instruction::Remainder() => self.binary_op(|l, r| l % r),
+                Instruction::And() => self.binary_op(|l, r| l & r),
+                Instruction::Or() => self.binary_op(|l, r| l | r),
+                Instruction::Xor() => self.binary_op(|l, r| l ^ r),
+                Instruction::LogicalLeftShift() => self.binary_op(|l, r| l << r),
+                Instruction::LogicalRightShift() => self.binary_op(|l, r| l >> r),
+                Instruction::ArithmeticRightShift() => {
+                    self.binary_op(|l, r| (l as i32 >> r) as u32)
                 }
 
                 Instruction::Pop(offset) => {
@@ -263,6 +266,28 @@ impl<R: Read, W: Write> Machine<R, W> {
         }
     }
 
+    /*
+     * Binary artimethc helper function
+     */
+    fn binary_op<F>(&mut self, op: F)
+    where
+        F: Fn(u32, u32) -> u32,
+    {
+        // Get right operand
+        let right = self.ram[self.sp as usize];
+        self.sp += 1;
+
+        // Get left operand
+        let left = self.ram[self.sp as usize];
+        self.sp += 1;
+
+        // Apply binary operation to operands
+        let result = op(left, right);
+
+        self.sp -= 1;
+        self.ram[self.sp as usize] = result;
+    }
+
     // Increment program counter
     fn step(&mut self) {
         self.pc += 1;
@@ -297,6 +322,16 @@ impl<R: Read, W: Write> Machine<R, W> {
 
             Opcode::BinaryArithmetic => match (inst >> 24) & 0xF {
                 0x0 => Add(),
+                0x1 => Subtract(),
+                0x2 => Multiply(),
+                0x3 => Divide(),
+                0x4 => Divide(),
+                0x5 => And(),
+                0x6 => Or(),
+                0x7 => Xor(),
+                0x8 => LogicalLeftShift(),
+                0x9 => LogicalRightShift(),
+                0xB => ArithmeticRightShift(),
                 _ => panic!("Invalid Binary Arithmetic Instruction"),
             },
 
