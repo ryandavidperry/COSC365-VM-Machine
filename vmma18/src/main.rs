@@ -111,7 +111,9 @@ impl<R: Read, W: Write> Machine<R, W> {
             let instruction = self.fetch(); 
 
             match instruction {
-                Instruction::Exit(code) => return Ok(code),
+                Instruction::Exit(code) => {
+                    return Ok(code)
+                },
 
                 Instruction::Swap(from, to) => {
 
@@ -233,13 +235,13 @@ impl<R: Read, W: Write> Machine<R, W> {
         use Instruction::*;
         match opcode {
             Opcode::Miscellaneous => match (inst >> 24) & 0xF {
-                0x0 => Exit(inst as u8 & 0xF),
+                0x0 => Exit(inst as u8 & 0xFF),
                 0x1 => Swap((inst >> 12) as i16 & 0xFFF, inst as i16 & 0xFFF),
                 0x2 => Nop(),
                 0x4 => Input(),
                 0x5 => Stinput(inst & 0xFFFFFF),
                 0xF => Debug(inst & 0xFFFFFF),
-                f => panic!("Invalid"),
+                _ => panic!("Invalid"),
             },
 
             Opcode::Pop => Pop(inst & 0x0FFF_FFFF),
