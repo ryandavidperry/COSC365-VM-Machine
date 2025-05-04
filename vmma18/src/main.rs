@@ -69,6 +69,10 @@ enum Instruction {
     LogicalRightShift(),
     ArithmeticRightShift(),
 
+    // Unary Arithmetic
+    Negate(),
+    Not(),
+
     Pop(u32),         
 
     Stprint(i32),     
@@ -89,6 +93,7 @@ enum Instruction {
 enum Opcode {
     Miscellaneous, 
     BinaryArithmetic,
+    UnaryArithmetic,
     Pop,          
     StringPrint,   
     UnaryIf,     
@@ -104,6 +109,7 @@ impl Opcode {
         match n {
             0x0 => Opcode::Miscellaneous,
             0x2 => Opcode::BinaryArithmetic,
+            0x3 => Opcode::UnaryArithmetic,
             0x1 => Opcode::Pop,
             0x4 => Opcode::StringPrint,
             0x9 => Opcode::UnaryIf,
@@ -129,7 +135,6 @@ impl<R: Read, W: Write> Machine<R, W> {
 
         Ok(())
     }
-
 
     // Run the virtual machine loop
     pub fn run(&mut self) -> Result<u8, Box<dyn std::error::Error>> {
@@ -194,19 +199,25 @@ impl<R: Read, W: Write> Machine<R, W> {
                 /*
                  * Binary Arithmetic Instructions
                  */
-                Instruction::Add()=> self.binary_op(|l, r| l + r),
-                Instruction::Subtract() => self.binary_op(|l, r| l - r),
-                Instruction::Multiply() => self.binary_op(|l, r| l * r),
-                Instruction::Divide() => self.binary_op(|l, r| l / r),
-                Instruction::Remainder() => self.binary_op(|l, r| l % r),
-                Instruction::And() => self.binary_op(|l, r| l & r),
-                Instruction::Or() => self.binary_op(|l, r| l | r),
-                Instruction::Xor() => self.binary_op(|l, r| l ^ r),
-                Instruction::LogicalLeftShift() => self.binary_op(|l, r| l << r),
+                Instruction::Add()               => self.binary_op(|l, r| l + r),
+                Instruction::Subtract()          => self.binary_op(|l, r| l - r),
+                Instruction::Multiply()          => self.binary_op(|l, r| l * r),
+                Instruction::Divide()            => self.binary_op(|l, r| l / r),
+                Instruction::Remainder()         => self.binary_op(|l, r| l % r),
+                Instruction::And()               => self.binary_op(|l, r| l & r),
+                Instruction::Or()                => self.binary_op(|l, r| l | r),
+                Instruction::Xor()               => self.binary_op(|l, r| l ^ r),
+                Instruction::LogicalLeftShift()  => self.binary_op(|l, r| l << r),
                 Instruction::LogicalRightShift() => self.binary_op(|l, r| l >> r),
                 Instruction::ArithmeticRightShift() => {
                     self.binary_op(|l, r| l as i32 >> r)
                 }
+
+                /*
+                 * Unary Arithmetic Instructions
+                 */
+                Instruction::Not() => self.unary_op(|x| !x),
+                Instruction::Negate() => self.unary_op(|x| x.wrapping_neg()),
 
                 Instruction::Pop(offset) => {
 
@@ -288,6 +299,21 @@ impl<R: Read, W: Write> Machine<R, W> {
         self.ram[self.sp as usize] = result as u32;
     }
 
+    /*
+     * Unary arithmetic helper function
+     */
+    fn unary_op<F>(&mut self, op: F)
+    where
+        F: Fn(i32) -> i32,
+    {
+        let val = self.ram[self.sp as usize] as i32;
+        self.sp += 1;
+
+        let result = op(val);
+        self.sp -= 1;
+        self.ram[self.sp as usize] = result as u32;
+    }
+
     // Increment program counter
     fn step(&mut self) {
         self.pc += 1;
@@ -325,7 +351,7 @@ impl<R: Read, W: Write> Machine<R, W> {
                 0x1 => Subtract(),
                 0x2 => Multiply(),
                 0x3 => Divide(),
-                0x4 => Divide(),
+                0x4 => Remainder(),
                 0x5 => And(),
                 0x6 => Or(),
                 0x7 => Xor(),
@@ -333,6 +359,12 @@ impl<R: Read, W: Write> Machine<R, W> {
                 0x9 => LogicalRightShift(),
                 0xB => ArithmeticRightShift(),
                 _ => panic!("Invalid Binary Arithmetic Instruction"),
+            },
+
+            Opcode::UnaryArithmetic => match (inst >> 24) & 0xF {
+                0x0 => Negate(),
+                0x1 => Not(),
+                _ => panic!("Invalid Unary Arithmetic Instruction"),
             },
 
             Opcode::Pop => Pop(inst & 0x0FFF_FFFF),
