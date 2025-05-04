@@ -1,0 +1,45 @@
+# Instructions
+
+- [X] Miscellaneous
+    - [X] Exit
+    - [X] Swap
+    - [X] No Operation
+    - [X] Input
+    - [X] String Input
+- [X] Pop
+- [ ] Binary Arithmetic Instructions
+    - [ ] Add
+    - [ ] Substract
+    - [ ] Multiply
+    - [ ] Divide
+    - [ ] Modulo
+    - [ ] And
+    - [ ] Or
+    - [ ] Xor
+    - [ ] Logical Left Shift
+    - [ ] Logical Right Shift
+    - [ ] Arithmetic Right Shift
+- [ ] Unary Arithmetic Instructions
+    - [ ] Negate (2's complement)
+    - [ ] Not (1's complement)
+- [X] String Print
+- [ ] Call
+- [ ] Return
+- [ ] Goto
+- [ ] Binary If Instructions
+    - [ ] Equals
+    - [ ] Not Equals
+    - [ ] Less Than
+    - [ ] Greater Than
+    - [ ] Less Than or Equal To
+    - [ ] Greater Than or Equal To
+- [ ] Unary If Instructions
+    - [X] Equals Zero
+    - [ ] Not Equals Zero
+    - [ ] Less Than 0
+    - [ ] Greater Than or Equal to 0
+- [ ] Dup
+- [ ] Print
+- [ ] Dump
+- [X] Push
+- [ ] String Push
