@@ -48,28 +48,51 @@ struct Machine<R: Read, W: Write> {
 // Instruction set (interpreted from RAM contents)
 #[derive(Debug)]
 enum Instruction {
+    // Miscellaneous
     Exit(u8),        
     Swap(i16, i16),   
     Nop(),           
     Input(),          
     Stinput(u32),    
+    Debug(u32),       
+
+    // Binary Arithmetic
+    Add(),
+    Subtract(),
+    Multiply(),
+    Divide(),
+    Remainder(),
+    And(),
+    Or(),
+    Xor(),
+    LogicalLeftShift(),
+    LogicalRightShift(),
+    ArithmeticRightShift(),
+
     Pop(u32),         
+
     Stprint(i32),     
+
+    // Unary If
     EqZero(i32),      
     NeZero(i32),      
     LtZero(i32),      
     GeZero(i32),     
+
+    Print(i32),
+
     Push(u32),        
-    Debug(u32),       
 }
 
 // Top-level instruction class based on opcode nibble
 #[derive(Debug)]
 enum Opcode {
     Miscellaneous, 
+    BinaryArithmetic,
     Pop,          
     StringPrint,   
     UnaryIf,     
+    Print,
     Push,          
     Unknown,       
 }
@@ -80,10 +103,12 @@ impl Opcode {
     fn from_integer(n: u8) -> Opcode {
         match n {
             0x0 => Opcode::Miscellaneous,
+            0x2 => Opcode::BinaryArithmetic,
             0x1 => Opcode::Pop,
-            0x2 => Opcode::StringPrint,
-            0x3 => Opcode::UnaryIf,
-            0x4 => Opcode::Push,
+            0x4 => Opcode::StringPrint,
+            0x9 => Opcode::UnaryIf,
+            0xD => Opcode::Print,
+            0xF => Opcode::Push,
             _ => Opcode::Unknown,
         }
     }
@@ -111,9 +136,7 @@ impl<R: Read, W: Write> Machine<R, W> {
             let instruction = self.fetch(); 
 
             match instruction {
-                Instruction::Exit(code) => {
-                    return Ok(code)
-                },
+                Instruction::Exit(code) => return Ok(code),
 
                 Instruction::Swap(from, to) => {
 
@@ -167,6 +190,21 @@ impl<R: Read, W: Write> Machine<R, W> {
                     }
                 }
 
+                Instruction::Add() => {
+                    // Pop right operand
+                    let right = self.ram[self.sp as usize];
+                    self.sp += 1;
+
+                    // Pop left operand
+                    let left = self.ram[self.sp as usize];
+                    self.sp += 1;
+
+                    // Push result
+                    let result = left + right;
+                    self.sp -= 1;
+                    self.ram[self.sp as usize] = result;
+                }
+
                 Instruction::Pop(offset) => {
 
                     // Pop offset bytes (in 4-byte words) from the stack
@@ -200,8 +238,21 @@ impl<R: Read, W: Write> Machine<R, W> {
                         self.pc += (offset >> 2) as i16;
                         continue;
                     }
-                    println!("eqz");
                 }
+
+                Instruction::Print(offset) => {
+                    let idx = (self.sp + (offset >> 2) as i16) as usize;
+                    let val = self.ram[idx];
+
+                    match offset & 0b11 {
+                        0b00 => writeln!(self.output, "{}", val)?,
+                        0b01 => writeln!(self.output, "{:#X}", val)?,
+                        0b10 => writeln!(self.output, "{:b}", val)?,
+                        0b11 => writeln!(self.output, "{:o}", val)?,
+                        _ => unreachable!(),
+                    }
+                    self.output.flush()?;
+                },
 
                 Instruction::Push(val) => self.push(val)?, 
 
@@ -241,7 +292,12 @@ impl<R: Read, W: Write> Machine<R, W> {
                 0x4 => Input(),
                 0x5 => Stinput(inst & 0xFFFFFF),
                 0xF => Debug(inst & 0xFFFFFF),
-                _ => panic!("Invalid"),
+                _ => panic!("Invalid Miscellaneous Instruction"),
+            },
+
+            Opcode::BinaryArithmetic => match (inst >> 24) & 0xF {
+                0x0 => Add(),
+                _ => panic!("Invalid Binary Arithmetic Instruction"),
             },
 
             Opcode::Pop => Pop(inst & 0x0FFF_FFFF),
@@ -269,6 +325,8 @@ impl<R: Read, W: Write> Machine<R, W> {
                     _ => unreachable!(),
                 }
             }
+
+            Opcode::Print => Print(inst as i32 & 0x0FFF_FFFF),
 
             Opcode::Push => {
 
