@@ -111,7 +111,7 @@ impl<R: Read, W: Write> Machine<R, W> {
             let instruction = self.fetch(); 
 
             match instruction {
-                Instruction::Exit(code) => return Ok(code), 
+                Instruction::Exit(code) => return Ok(code),
 
                 Instruction::Swap(from, to) => {
 
@@ -135,7 +135,6 @@ impl<R: Read, W: Write> Machine<R, W> {
                         u32::from_str_radix(line.trim(), 10)
                     }
                     .map_err(|_| "Failed to parse input")?;
-
                     self.push(word)?;
                 }
 
@@ -199,9 +198,13 @@ impl<R: Read, W: Write> Machine<R, W> {
                         self.pc += (offset >> 2) as i16;
                         continue;
                     }
+                    println!("eqz");
                 }
 
-                Instruction::Push(val) => self.push(val)?, 
+                Instruction::Push(val) => {
+                    println!("push {}", val);
+                    self.push(val)?
+                }, 
 
                 _ => return Err("Unimplemented instruction".into()), 
             }
