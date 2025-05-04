@@ -7,18 +7,18 @@
     - [X] Input
     - [X] String Input
 - [X] Pop
-- [ ] Binary Arithmetic Instructions
-    - [ ] Add
-    - [ ] Substract
-    - [ ] Multiply
-    - [ ] Divide
-    - [ ] Modulo
-    - [ ] And
-    - [ ] Or
-    - [ ] Xor
-    - [ ] Logical Left Shift
-    - [ ] Logical Right Shift
-    - [ ] Arithmetic Right Shift
+- [X] Binary Arithmetic Instructions
+    - [X] Add
+    - [X] Substract
+    - [X] Multiply
+    - [X] Divide
+    - [X] Modulo
+    - [X] And
+    - [X] Or
+    - [X] Xor
+    - [X] Logical Left Shift
+    - [X] Logical Right Shift
+    - [X] Arithmetic Right Shift
 - [ ] Unary Arithmetic Instructions
     - [ ] Negate (2's complement)
     - [ ] Not (1's complement)
