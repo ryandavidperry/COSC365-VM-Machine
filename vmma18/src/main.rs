@@ -201,10 +201,7 @@ impl<R: Read, W: Write> Machine<R, W> {
                     println!("eqz");
                 }
 
-                Instruction::Push(val) => {
-                    println!("push {}", val);
-                    self.push(val)?
-                }, 
+                Instruction::Push(val) => self.push(val)?, 
 
                 _ => return Err("Unimplemented instruction".into()), 
             }
