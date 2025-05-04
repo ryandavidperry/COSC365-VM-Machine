@@ -19,9 +19,9 @@
     - [X] Logical Left Shift
     - [X] Logical Right Shift
     - [X] Arithmetic Right Shift
-- [ ] Unary Arithmetic Instructions
-    - [ ] Negate (2's complement)
-    - [ ] Not (1's complement)
+- [X] Unary Arithmetic Instructions
+    - [X] Negate (2's complement)
+    - [X] Not (1's complement)
 - [X] String Print
 - [ ] Call
 - [ ] Return
