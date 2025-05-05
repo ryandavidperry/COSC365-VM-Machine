@@ -23,8 +23,8 @@
     - [X] Negate (2's complement)
     - [X] Not (1's complement)
 - [X] String Print
-- [ ] Call
-- [ ] Return
+- [X] Call
+- [X] Return
 - [X] Goto
 - [X] Binary If Instructions
     - [X] Equals

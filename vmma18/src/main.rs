@@ -79,6 +79,9 @@ enum Instruction {
 
     Goto(i32),
 
+    Call(i32),
+    Return(u32),
+
     BinaryIf(u8, i32),
 
     // Unary If
@@ -102,6 +105,8 @@ enum Opcode {
     Pop,          
     StringPrint,   
     Goto,
+    Call,
+    Return
     UnaryIf,     
     BinaryIf,
     Dup,
@@ -121,6 +126,8 @@ impl Opcode {
             0x2 => Opcode::BinaryArithmetic,
             0x3 => Opcode::UnaryArithmetic,
             0x4 => Opcode::StringPrint,
+            0x5 => Opcode::Call,
+            0x6 => Opcode::Return,
             0x7 => Opcode::Goto,
             0x8 => Opcode::BinaryIf,
             0x9 => Opcode::UnaryIf,
@@ -259,6 +266,23 @@ impl<R: Read, W: Write> Machine<R, W> {
                         idx += 1;
                     }
                     self.output.flush()?;
+                }
+
+                Instruction::Call(offset) => {
+                    // Push return address (next PC)
+                    let return_address = (self.pc + 1) as u32;
+                    self.push(return_address)?;
+                
+                    // Jump to offset
+                    self.pc += (offset >> 2) as i16;
+                    continue;
+                },
+                Instruction::Return(offset) => {
+                    // Pop address from stack
+                    let addr = self.ram.get(self.sp as usize).copied().unwrap_or(0);
+                    self.sp += 1 + ((offset >> 2) as i16).clamp(0, 1024 - self.sp);
+                    self.pc = addr as i16;
+                    continue;
                 }
 
                 /*
@@ -474,6 +498,18 @@ impl<R: Read, W: Write> Machine<R, W> {
             },
 
             Opcode::StringPrint => Stprint(inst as i32 & 0x0FFF_FFFF),
+
+            Opcode::Call => {
+                let mut offset = (inst & 0x03FF_FFFF) as i32;
+                if (offset >> 25) & 1 == 1 {
+                    offset |= !0x03FF_FFFF;
+                }
+                Instruction::Call(offset)
+            },
+            Opcode::Return => {
+                let offset = (inst & 0x03FF_FFFF) as u32;
+                Instruction::Return(offset)
+            }
 
             Opcode::BinaryIf => {
                 let cond = (inst >> 25) & 0b111;
