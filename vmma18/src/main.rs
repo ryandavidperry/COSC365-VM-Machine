@@ -203,19 +203,17 @@ impl<R: Read, W: Write> Machine<R, W> {
                 /*
                  * Binary Arithmetic Instructions
                  */
-                Instruction::Add()               => self.binary_op(|l, r| l + r),
-                Instruction::Subtract()          => self.binary_op(|l, r| l - r),
-                Instruction::Multiply()          => self.binary_op(|l, r| l * r),
-                Instruction::Divide()            => self.binary_op(|l, r| l / r),
-                Instruction::Remainder()         => self.binary_op(|l, r| l % r),
-                Instruction::And()               => self.binary_op(|l, r| l & r),
-                Instruction::Or()                => self.binary_op(|l, r| l | r),
-                Instruction::Xor()               => self.binary_op(|l, r| l ^ r),
-                Instruction::LogicalLeftShift()  => self.binary_op(|l, r| l << r),
-                Instruction::LogicalRightShift() => self.binary_op(|l, r| l >> r),
-                Instruction::ArithmeticRightShift() => {
-                    self.binary_op(|l, r| l as i32 >> r)
-                }
+                Instruction::Add()                  => self.binary_op(|l, r| l + r),
+                Instruction::Subtract()             => self.binary_op(|l, r| l - r),
+                Instruction::Multiply()             => self.binary_op(|l, r| l * r),
+                Instruction::Divide()               => self.binary_op(|l, r| l / r),
+                Instruction::Remainder()            => self.binary_op(|l, r| l % r),
+                Instruction::And()                  => self.binary_op(|l, r| l & r),
+                Instruction::Or()                   => self.binary_op(|l, r| l | r),
+                Instruction::Xor()                  => self.binary_op(|l, r| l ^ r),
+                Instruction::LogicalLeftShift()     => self.binary_op(|l, r| l << r),
+                Instruction::LogicalRightShift()    => self.binary_op(|l, r| l >> r),
+                Instruction::ArithmeticRightShift() => self.binary_op(|l, r| l as i32 >> r),
 
                 /*
                  * Unary Arithmetic Instructions
@@ -254,11 +252,26 @@ impl<R: Read, W: Write> Machine<R, W> {
                     self.output.flush()?;
                 }
 
+                /*
+                 * Unary If Instructions
+                 */
                 Instruction::EqZero(offset) => {
-
-                    // Conditional jump if top of stack == 0
-                    if self.ram[self.sp as usize] == 0 {
-                        self.pc += (offset >> 2) as i16;
+                    if self.unary_if(offset, |x| x == 0) {
+                        continue;
+                    }
+                }
+                Instruction::NeZero(offset) => {
+                    if self.unary_if(offset, |x| x != 0) {
+                        continue;
+                    }
+                }
+                Instruction::GeZero(offset) => {
+                    if self.unary_if(offset, |x| x >= 0) {
+                        continue;
+                    }
+                }
+                Instruction::LtZero(offset) => {
+                    if self.unary_if(offset, |x| x < 0) {
                         continue;
                     }
                 }
@@ -321,6 +334,21 @@ impl<R: Read, W: Write> Machine<R, W> {
         let result = op(val);
         self.sp -= 1;
         self.ram[self.sp as usize] = result as u32;
+    }
+
+    /*
+     * Unary If helper function
+     */
+    fn unary_if<F>(&mut self, offset: i32, cond: F) -> bool
+    where
+        F: Fn(i32) -> bool,
+    {
+        let val = self.ram[self.sp as usize] as i32;
+        if cond(val) {
+            self.pc += (offset >> 2) as i16;
+            return true; // Jump occurred
+        }
+        false
     }
 
     // Increment program counter
