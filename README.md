@@ -38,8 +38,8 @@
     - [X] Not Equals Zero
     - [X] Less Than 0
     - [X] Greater Than or Equal to 0
-- [ ] Dup
+- [X] Dup
 - [X] Print
-- [ ] Dump
+- [X] Dump
 - [X] Push
 - [ ] String Push
