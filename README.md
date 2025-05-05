@@ -33,11 +33,11 @@
     - [ ] Greater Than
     - [ ] Less Than or Equal To
     - [ ] Greater Than or Equal To
-- [ ] Unary If Instructions
+- [X] Unary If Instructions
     - [X] Equals Zero
-    - [ ] Not Equals Zero
-    - [ ] Less Than 0
-    - [ ] Greater Than or Equal to 0
+    - [X] Not Equals Zero
+    - [X] Less Than 0
+    - [X] Greater Than or Equal to 0
 - [ ] Dup
 - [ ] Print
 - [ ] Dump
