@@ -26,13 +26,13 @@
 - [ ] Call
 - [ ] Return
 - [X] Goto
-- [ ] Binary If Instructions
-    - [ ] Equals
-    - [ ] Not Equals
-    - [ ] Less Than
-    - [ ] Greater Than
-    - [ ] Less Than or Equal To
-    - [ ] Greater Than or Equal To
+- [X] Binary If Instructions
+    - [X] Equals
+    - [X] Not Equals
+    - [X] Less Than
+    - [X] Greater Than
+    - [X] Less Than or Equal To
+    - [X] Greater Than or Equal To
 - [X] Unary If Instructions
     - [X] Equals Zero
     - [X] Not Equals Zero
