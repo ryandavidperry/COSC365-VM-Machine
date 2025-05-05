@@ -165,10 +165,13 @@ impl<R: Read, W: Write> Machine<R, W> {
                 Instruction::Exit(code) => return Ok(code),
 
                 Instruction::Swap(from, to) => {
+                    // Sign-extend the 12-bit offsets
+                    let from_offset = (((from as i16) << 4) >> 2) as i16;
+                    let to_offset = (((to as i16) << 4) >> 2) as i16;
 
                     // Swap two words in the stack (from and to are relative to SP)
-                    let f = (self.sp + (from >> 2)) as usize;
-                    let t = (self.sp + (to >> 2)) as usize;
+                    let f = (self.sp + (from_offset >> 2)) as usize;
+                    let t = (self.sp + (to_offset >> 2)) as usize;
                     self.ram.swap(f, t);
                 }
 
@@ -218,6 +221,10 @@ impl<R: Read, W: Write> Machine<R, W> {
 
                         self.push(word)?;
                     }
+                }
+
+                Instruction::Debug(_offset) => {
+                    println!("Debug");
                 }
 
                 /*
@@ -380,8 +387,6 @@ impl<R: Read, W: Write> Machine<R, W> {
 
 
                 Instruction::Push(val) => self.push(val)?, 
-
-                _ => return Err("Unimplemented instruction".into()), 
             }
 
             self.step(); 
