@@ -42,4 +42,19 @@
 - [X] Print
 - [X] Dump
 - [X] Push
-- [ ] String Push
+
+# Test Files
+- [X] abs.v
+- [ ] add.v
+- [ ] all.v
+- [ ] avg.v
+- [ ] calc.v
+- [ ] call.v
+- [ ] for.v
+- [ ] print.v
+- [ ] sign.v
+- [ ] stinput.v
+- [ ] str.v
+- [ ] sum.v
+- [ ] swap.v
+- [ ] twoc.v
