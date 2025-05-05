@@ -25,7 +25,7 @@
 - [X] String Print
 - [ ] Call
 - [ ] Return
-- [ ] Goto
+- [X] Goto
 - [ ] Binary If Instructions
     - [ ] Equals
     - [ ] Not Equals
