@@ -179,14 +179,14 @@ impl<R: Read, W: Write> Machine<R, W> {
                     // Read a number (decimal/hex/bin) from user
                     let line = self.read_line()?;
                     let word = if let Some(stripped) = line.trim().strip_prefix("0x") {
-                        u32::from_str_radix(stripped, 16)
+                        i32::from_str_radix(stripped, 16)
                     } else if let Some(stripped) = line.trim().strip_prefix("0b") {
-                        u32::from_str_radix(stripped, 2)
+                        i32::from_str_radix(stripped, 2)
                     } else {
-                        u32::from_str_radix(line.trim(), 10)
+                        i32::from_str_radix(line.trim(), 10)
                     }
-                    .map_err(|_| "Failed to parse input")?;
-                    self.push(word)?;
+                    .map_err(|_| "(input) value cannot be converted to an integer")?;
+                    self.push(word as u32)?;
                 }
 
                 Instruction::Stinput(max_chars) => {
