@@ -55,6 +55,7 @@
 - [ ] sign.v
 - [ ] stinput.v
 - [ ] str.v
+- [ ] strapped.v
 - [ ] sum.v
 - [ ] swap.v
 - [ ] twoc.v
