@@ -89,7 +89,7 @@ enum Instruction {
     NeZero(i32),      
     LtZero(i32),      
     GeZero(i32),     
-    Dup(i32),
+    Dup(u32),
     Dump(),
     Print(i32),
 
@@ -106,7 +106,7 @@ enum Opcode {
     StringPrint,   
     Goto,
     Call,
-    Return
+    Return,
     UnaryIf,     
     BinaryIf,
     Dup,
@@ -253,20 +253,27 @@ impl<R: Read, W: Write> Machine<R, W> {
                     // Print a packed string from RAM starting at offset
                     let mut idx = (self.sp + (offset >> 2) as i16) as usize;
                     loop {
-                        let bytes = self.ram[idx].to_be_bytes(); 
-                        for &b in &bytes[1..] {
+                        let cur_word = self.ram[idx];
+                        
+                        if cur_word == 0 {
+                            break;
+                        }
+                        
+                        let bytes = cur_word.to_le_bytes(); 
+                        for &b in &bytes {
                             if b != 1 {
                                 self.output.write_all(&[b])?;
                             }
                         }
-
-                        if bytes[0] == 0 || idx == 0 {
+                        if bytes[3] == 0 || idx == 0 {
                             break;
                         }
                         idx += 1;
                     }
+
                     self.output.flush()?;
                 }
+
 
                 Instruction::Call(offset) => {
                     // Push return address (next PC)
@@ -354,6 +361,7 @@ impl<R: Read, W: Write> Machine<R, W> {
                 Instruction::Dump() => {
                     if self.sp == 1024 {
                         // stack empty (nop)
+        
                     } else {
                         for offset in self.sp..1024 {
                             let address = offset - self.sp;
