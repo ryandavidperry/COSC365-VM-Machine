@@ -47,9 +47,10 @@ for file in "$TEST_DIR"/*.v; do
 
     echo "🟢  Running test: $file"
     echo "------------------------"
-    echo ""
 
     cargo run --quiet "$file"
+
+    echo ""
 
 done
 
