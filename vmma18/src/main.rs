@@ -175,17 +175,21 @@ impl<R: Read, W: Write> Machine<R, W> {
                 Instruction::Nop() => (), 
 
                 Instruction::Input() => {
-
                     // Read a number (decimal/hex/bin) from user
                     let line = self.read_line()?;
-                    let word = if let Some(stripped) = line.trim().strip_prefix("0x") {
+                    let trimmed = line.trim();
+
+                    let word = if let Some(stripped) = trimmed.strip_prefix("0x") {
                         i32::from_str_radix(stripped, 16)
-                    } else if let Some(stripped) = line.trim().strip_prefix("0b") {
+                            .map_err(|_| "(input) hex input cannot be converted to an integer")
+                    } else if let Some(stripped) = trimmed.strip_prefix("0b") {
                         i32::from_str_radix(stripped, 2)
+                            .map_err(|_| "(input) binary input cannotbe converted to an integer")
                     } else {
-                        i32::from_str_radix(line.trim(), 10)
-                    }
-                    .map_err(|_| "(input) value cannot be converted to an integer")?;
+                        i32::from_str_radix(trimmed, 10)
+                            .map_err(|_| "(input) decimal input cannot be converted to an integer")
+                    }?;
+
                     self.push(word as u32)?;
                 }
 
@@ -254,11 +258,11 @@ impl<R: Read, W: Write> Machine<R, W> {
                     let mut idx = (self.sp + (offset >> 2) as i16) as usize;
                     loop {
                         let cur_word = self.ram[idx];
-                        
+
                         if cur_word == 0 {
                             break;
                         }
-                        
+
                         let bytes = cur_word.to_le_bytes(); 
                         for &b in &bytes {
                             if b != 1 {
@@ -279,7 +283,7 @@ impl<R: Read, W: Write> Machine<R, W> {
                     // Push return address (next PC)
                     let return_address = (self.pc + 1) as u32;
                     self.push(return_address)?;
-                
+
                     // Jump to offset
                     self.pc += (offset >> 2) as i16;
                     continue;
@@ -342,7 +346,7 @@ impl<R: Read, W: Write> Machine<R, W> {
                     let idx = (self.sp + (offset >> 2) as i16) as usize;
                     let val = self.ram[idx];
                     self.push(val)?;
-                 }
+                }
 
                 Instruction::Print(offset) => {
                     let idx = (self.sp + (offset >> 2) as i16) as usize;
@@ -361,7 +365,7 @@ impl<R: Read, W: Write> Machine<R, W> {
                 Instruction::Dump() => {
                     if self.sp == 1024 {
                         // stack empty (nop)
-        
+
                     } else {
                         for offset in self.sp..1024 {
                             let address = offset - self.sp;
@@ -371,7 +375,7 @@ impl<R: Read, W: Write> Machine<R, W> {
 
                         self.output.flush()?;
                     }
-                    
+
                 }
 
 
@@ -390,21 +394,21 @@ impl<R: Read, W: Write> Machine<R, W> {
     fn binary_op<F>(&mut self, op: F)
     where
         F: Fn(i32, i32) -> i32,
-    {
-        // Get right operand
-        let right = self.ram[self.sp as usize] as i32;
-        self.sp += 1;
+        {
+            // Get right operand
+            let right = self.ram[self.sp as usize] as i32;
+            self.sp += 1;
 
-        // Get left operand
-        let left = self.ram[self.sp as usize] as i32;
-        self.sp += 1;
+            // Get left operand
+            let left = self.ram[self.sp as usize] as i32;
+            self.sp += 1;
 
-        // Apply binary operation to operands
-        let result = op(left, right);
+            // Apply binary operation to operands
+            let result = op(left, right);
 
-        self.sp -= 1;
-        self.ram[self.sp as usize] = result as u32;
-    }
+            self.sp -= 1;
+            self.ram[self.sp as usize] = result as u32;
+        }
 
     /*
      * Unary arithmetic helper function
@@ -412,14 +416,14 @@ impl<R: Read, W: Write> Machine<R, W> {
     fn unary_op<F>(&mut self, op: F)
     where
         F: Fn(i32) -> i32,
-    {
-        let val = self.ram[self.sp as usize] as i32;
-        self.sp += 1;
+        {
+            let val = self.ram[self.sp as usize] as i32;
+            self.sp += 1;
 
-        let result = op(val);
-        self.sp -= 1;
-        self.ram[self.sp as usize] = result as u32;
-    }
+            let result = op(val);
+            self.sp -= 1;
+            self.ram[self.sp as usize] = result as u32;
+        }
 
     /*
      * Unary If helper function
@@ -427,14 +431,14 @@ impl<R: Read, W: Write> Machine<R, W> {
     fn unary_if<F>(&mut self, offset: i32, cond: F) -> bool
     where
         F: Fn(i32) -> bool,
-    {
-        let val = self.ram[self.sp as usize] as i32;
-        if cond(val) {
-            self.pc += (offset >> 2) as i16;
-            return true; // Jump occurred
+        {
+            let val = self.ram[self.sp as usize] as i32;
+            if cond(val) {
+                self.pc += (offset >> 2) as i16;
+                return true; // Jump occurred
+            }
+            false
         }
-        false
-    }
 
     // Increment program counter
     fn step(&mut self) {
@@ -552,8 +556,8 @@ impl<R: Read, W: Write> Machine<R, W> {
                 }
             }
             Opcode::Dup => {
-               let offset = inst & 0x0FFF_FFFF;
-               Dup(offset) 
+                let offset = inst & 0x0FFF_FFFF;
+                Dup(offset) 
             }
 
             Opcode::Print => Print(inst as i32 & 0x0FFF_FFFF),
