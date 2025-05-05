@@ -86,7 +86,8 @@ enum Instruction {
     NeZero(i32),      
     LtZero(i32),      
     GeZero(i32),     
-
+    Dup(i32),
+    Dump(),
     Print(i32),
 
     Push(u32),        
@@ -103,7 +104,9 @@ enum Opcode {
     Goto,
     UnaryIf,     
     BinaryIf,
+    Dup,
     Print,
+    Dump,
     Push,          
     Unknown,       
 }
@@ -121,7 +124,9 @@ impl Opcode {
             0x7 => Opcode::Goto,
             0x8 => Opcode::BinaryIf,
             0x9 => Opcode::UnaryIf,
+            0xC => Opcode::Dup,
             0xD => Opcode::Print,
+            0xE => Opcode::Dump,
             0xF => Opcode::Push,
             _ => Opcode::Unknown,
         }
@@ -302,6 +307,12 @@ impl<R: Read, W: Write> Machine<R, W> {
                     }
                 }
 
+                Instruction::Dup(offset) => {
+                    let idx = (self.sp + (offset >> 2) as i16) as usize;
+                    let val = self.ram[idx];
+                    self.push(val)?;
+                 }
+
                 Instruction::Print(offset) => {
                     let idx = (self.sp + (offset >> 2) as i16) as usize;
                     let val = self.ram[idx];
@@ -315,6 +326,22 @@ impl<R: Read, W: Write> Machine<R, W> {
                     }
                     self.output.flush()?;
                 },
+
+                Instruction::Dump() => {
+                    if self.sp == 1024 {
+                        // stack empty (nop)
+                    } else {
+                        for offset in self.sp..1024 {
+                            let address = offset - self.sp;
+                            let value = self.ram[offset as usize];
+                            writeln!(self.output, "{:04x}: {:08x}", address, value)?;
+                        }
+
+                        self.output.flush()?;
+                    }
+                    
+                }
+
 
                 Instruction::Push(val) => self.push(val)?, 
 
@@ -480,9 +507,13 @@ impl<R: Read, W: Write> Machine<R, W> {
                     _ => unreachable!(),
                 }
             }
+            Opcode::Dup => {
+               let offset = inst & 0x0FFF_FFFF;
+               Dup(offset) 
+            }
 
             Opcode::Print => Print(inst as i32 & 0x0FFF_FFFF),
-
+            Opcode::Dump => Dump(),
             Opcode::Push => {
 
                 // Push a signed immediate value
