@@ -79,6 +79,8 @@ enum Instruction {
 
     Goto(i32),
 
+    BinaryIf(u8, i32),
+
     // Unary If
     EqZero(i32),      
     NeZero(i32),      
@@ -100,6 +102,7 @@ enum Opcode {
     StringPrint,   
     Goto,
     UnaryIf,     
+    BinaryIf,
     Print,
     Push,          
     Unknown,       
@@ -111,11 +114,12 @@ impl Opcode {
     fn from_integer(n: u8) -> Opcode {
         match n {
             0x0 => Opcode::Miscellaneous,
+            0x1 => Opcode::Pop,
             0x2 => Opcode::BinaryArithmetic,
             0x3 => Opcode::UnaryArithmetic,
-            0x1 => Opcode::Pop,
             0x4 => Opcode::StringPrint,
             0x7 => Opcode::Goto,
+            0x8 => Opcode::BinaryIf,
             0x9 => Opcode::UnaryIf,
             0xD => Opcode::Print,
             0xF => Opcode::Push,
@@ -250,6 +254,28 @@ impl<R: Read, W: Write> Machine<R, W> {
                         idx += 1;
                     }
                     self.output.flush()?;
+                }
+
+                /*
+                 * Binary If Instructions
+                 */
+                Instruction::BinaryIf(cond, offset) => {
+                    let right = *self.ram.get(self.sp as usize).unwrap_or(&0);
+                    let left = *self.ram.get((self.sp + 1) as usize).unwrap_or(&0);
+
+                    let taken = match cond {
+                        0 => left == right,
+                        1 => left != right,
+                        2 => left < right,
+                        3 => left > right,
+                        4 => left <= right,
+                        5 => left >= right,
+                        _ => false,
+                    };
+                    if taken {
+                        self.pc += offset as i16;
+                        continue;
+                    }
                 }
 
                 /*
@@ -398,6 +424,7 @@ impl<R: Read, W: Write> Machine<R, W> {
                 _ => panic!("Invalid Binary Arithmetic Instruction"),
             },
 
+
             Opcode::UnaryArithmetic => match (inst >> 24) & 0xF {
                 0x0 => Negate(),
                 0x1 => Not(),
@@ -420,6 +447,17 @@ impl<R: Read, W: Write> Machine<R, W> {
             },
 
             Opcode::StringPrint => Stprint(inst as i32 & 0x0FFF_FFFF),
+
+            Opcode::BinaryIf => {
+                let cond = (inst >> 25) & 0b111;
+                let raw = (inst >> 2) & 0x007F_FFFF;
+                let offset = if raw & (1 << 22) != 0 {
+                    (raw as i32) | !0x007F_FFFF
+                } else {
+                    raw as i32
+                };
+                BinaryIf(cond as u8, offset as i32)
+            }
 
             Opcode::UnaryIf => {
 
