@@ -42,16 +42,12 @@ is_skipped() {
 # Run each .v file unless it's in the skip list
 for file in "$TEST_DIR"/*.v; do
     if is_skipped "$file"; then
-        echo "⏩Skipping file: $file"
         continue
-    fi
-
-    if [[ "${SKIP_LIST[@]}" != "" ]]; then
-        echo ""
     fi
 
     echo "🟢  Running test: $file"
     echo "------------------------"
+    echo ""
 
     cargo run --quiet "$file"
 
