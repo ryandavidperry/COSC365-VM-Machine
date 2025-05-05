@@ -2,8 +2,8 @@ use std::io::{self, Read, Write};
 use std::env::args;
 use std::fs;
 
-// Entry point of the program
 fn main() {
+    // Check arguments
     let args: Vec<String> = args().collect();
     if args.len() != 2 {
         println!("Usage: {} <file.v>", &args[0]);
@@ -56,6 +56,8 @@ enum Instruction {
     Stinput(u32),    
     Debug(u32),       
 
+    Pop(u32),         
+
     // Binary Arithmetic
     Add(),
     Subtract(),
@@ -73,9 +75,9 @@ enum Instruction {
     Negate(),
     Not(),
 
-    Pop(u32),         
-
     Stprint(i32),     
+
+    Goto(i32),
 
     // Unary If
     EqZero(i32),      
@@ -96,6 +98,7 @@ enum Opcode {
     UnaryArithmetic,
     Pop,          
     StringPrint,   
+    Goto,
     UnaryIf,     
     Print,
     Push,          
@@ -112,6 +115,7 @@ impl Opcode {
             0x3 => Opcode::UnaryArithmetic,
             0x1 => Opcode::Pop,
             0x4 => Opcode::StringPrint,
+            0x7 => Opcode::Goto,
             0x9 => Opcode::UnaryIf,
             0xD => Opcode::Print,
             0xF => Opcode::Push,
@@ -223,6 +227,11 @@ impl<R: Read, W: Write> Machine<R, W> {
 
                     // Pop offset bytes (in 4-byte words) from the stack
                     self.sp = (self.sp + (offset >> 2) as i16).clamp(0, 1024);
+                }
+
+                Instruction::Goto(offset) => {
+                    self.pc += offset as i16;
+                    continue;
                 }
 
                 Instruction::Stprint(offset) => {
@@ -368,6 +377,19 @@ impl<R: Read, W: Write> Machine<R, W> {
             },
 
             Opcode::Pop => Pop(inst & 0x0FFF_FFFF),
+
+            Opcode::Goto => {
+                // Extract offset
+                let raw = (inst >> 2) & 0x03FF_FFFF;
+
+                let offset = if (raw & (1 << 25)) != 0 {
+                    // Sign extend negative offset
+                    (raw | !0x03FF_FFFF) as i32
+                } else {
+                    raw as i32
+                };
+                Goto(offset)
+            },
 
             Opcode::StringPrint => Stprint(inst as i32 & 0x0FFF_FFFF),
 
