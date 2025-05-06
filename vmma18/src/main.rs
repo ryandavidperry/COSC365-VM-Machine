@@ -1,3 +1,8 @@
+/* Names: Tyler Cartier, Thomas Latawic, Ryan Perry, Chase Woodfill
+ * Date: 05/06/2025
+ * Synopsis: Executes 4-byte instructions in an assembled binary file
+ */
+
 use std::io::{self, Read, Write};
 use std::env::args;
 use std::fs;
