@@ -209,14 +209,14 @@ impl<R: Read, W: Write> Machine<R, W> {
 
                     // Pad to 3-byte alignment with sentinel value 0x01
                     while input.len() % 3 != 0 {
-                        input.push(1 as u8 as char);
+                        input.push(0x01 as char);
                     }
 
                     // Encode string backwards into stack
                     for (i, chunk) in input.as_bytes().rchunks(3).enumerate() {
-                        let word = ((chunk[0] as u32) << 16)
+                        let word = ((chunk[2] as u32) << 16)
                             | ((chunk[1] as u32) << 8)
-                            | (chunk[2] as u32)
+                            | (chunk[0] as u32)
                             | if i != 0 { 0x0100_0000 } else { 0 };
 
                         self.push(word)?;
