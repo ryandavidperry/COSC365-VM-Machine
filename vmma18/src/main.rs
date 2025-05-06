@@ -292,13 +292,21 @@ impl<R: Read, W: Write> Machine<R, W> {
                     self.push(return_address)?;
 
                     // Jump to offset
-                    self.pc += (offset >> 2) as i16;
+                    self.pc += offset as i16;
                     continue;
-                },
+                }
+
                 Instruction::Return(offset) => {
-                    // Pop address from stack
-                    let addr = self.ram.get(self.sp as usize).copied().unwrap_or(0);
-                    self.sp += 1 + ((offset >> 2) as i16).clamp(0, 1024 - self.sp);
+                    // Calculate address location using offset
+                    let offset_words = (offset / 4) as i16;
+                    let addr_index = (self.sp + offset_words) as usize;
+
+                    // Pop the return address
+                    let addr = self.ram.get(addr_index).copied().unwrap_or(0);
+
+                    // Free the frame
+                    self.sp += 1 + offset_words;
+
                     self.pc = addr as i16;
                     continue;
                 }
@@ -517,15 +525,20 @@ impl<R: Read, W: Write> Machine<R, W> {
             Opcode::StringPrint => Stprint(inst as i32 & 0x0FFF_FFFF),
 
             Opcode::Call => {
-                let mut offset = (inst & 0x03FF_FFFF) as i32;
-                if (offset >> 25) & 1 == 1 {
-                    offset |= !0x03FF_FFFF;
-                }
-                Instruction::Call(offset)
+                // Extract offset
+                let raw = (inst >> 2) & 0x03FF_FFFF;
+
+                let offset = if (raw & (1 << 25)) != 0 {
+                    // Sign extend negative offset
+                    (raw | !0x03FF_FFFF) as i32
+                } else {
+                    raw as i32
+                };
+                Call(offset)
             },
             Opcode::Return => {
-                let offset = (inst & 0x03FF_FFFF) as u32;
-                Instruction::Return(offset)
+                let offset = inst & 0x0FFF_FFFF;
+                Return(offset as u32)
             }
 
             Opcode::BinaryIf => {
