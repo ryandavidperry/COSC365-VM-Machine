@@ -361,9 +361,9 @@ impl<R: Read, W: Write> Machine<R, W> {
 
                     match offset & 0b11 {
                         0b00 => writeln!(self.output, "{}", val as i32)?,
-                        0b01 => writeln!(self.output, "{:#X}", val as i32)?,
-                        0b10 => writeln!(self.output, "{:b}", val as i32)?,
-                        0b11 => writeln!(self.output, "{:o}", val as i32)?,
+                        0b01 => writeln!(self.output, "{:#x}", val as i32)?,
+                        0b10 => writeln!(self.output, "0b{:b}", val as i32)?,
+                        0b11 => writeln!(self.output, "0o{:o}", val as i32)?,
                         _ => unreachable!(),
                     }
                     self.output.flush()?;
